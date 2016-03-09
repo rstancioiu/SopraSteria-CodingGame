@@ -1,0 +1,9 @@
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\SopraSteria-CodingGame.exe.config
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\SopraSteria-CodingGame.exe
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\SopraSteria-CodingGame.pdb
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\Newtonsoft.Json.dll
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\System.Net.Http.Formatting.dll
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\Newtonsoft.Json.xml
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Release\System.Net.Http.Formatting.xml
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\obj\Release\SopraSteria-CodingGame.exe
+C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\obj\Release\SopraSteria-CodingGame.pdb
