@@ -17,12 +17,12 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClients;
 
 public class LauncherTest {
-	private static final String ipServer = "[ADRESSE_IP_SERVEUR_TEST]"; // a remplacer par l'adresse fournie dans le mail recu
+	private static final String ipServer = "52.29.48.22"; // a remplacer par l'adresse fournie dans le mail recu
 
-	private static final long realteamId = 0000000; // mettre votre teamId envoyé dans le mail
-	private static final String secret ="xxxxxxxxxxxxxxxxxx"; // mettre votre secret
+	private static final long realteamId = 50; // mettre votre teamId envoyé dans le mail
+	private static final String secret ="6Q8TL9A6S7"; // mettre votre secret
 	private static final long maxteamId = realteamId + 6; // ne pas toucher
-	private static final int socketNumber = 0000000000; // mettre le port envoyé dans le mail
+	private static final int socketNumber = 2050; // mettre le port envoyé dans le mail
 
 	private static long gameId;
 
@@ -50,7 +50,7 @@ public class LauncherTest {
 				.setParameter("teamId", Long.toString(realteamId))
 				.setParameter("secret", secret)
 				.build();
-
+		System.out.println(uri.toString());
 		HttpGet httpget = new HttpGet(uri);
 		ResponseHandler<String> handler = new BasicResponseHandler();
 		gameId = Long.parseLong(httpclient.execute(httpget, handler));
