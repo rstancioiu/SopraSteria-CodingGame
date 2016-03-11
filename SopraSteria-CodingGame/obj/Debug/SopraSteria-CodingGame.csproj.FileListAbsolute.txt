@@ -1,5 +1,0 @@
-C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Debug\SopraSteria-CodingGame.exe.config
-C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Debug\SopraSteria-CodingGame.exe
-C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\bin\Debug\SopraSteria-CodingGame.pdb
-C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\obj\Debug\SopraSteria-CodingGame.exe
-C:\cygwin64\home\Afkid\GitHub\SopraSteria-CodingGame\SopraSteria-CodingGame\obj\Debug\SopraSteria-CodingGame.pdb
