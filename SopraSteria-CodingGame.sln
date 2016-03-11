@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SopraSteria-CodingGame", "SopraSteria-CodingGame\SopraSteria-CodingGame.csproj", "{5314B1DF-DDB8-45F7-8658-0BE0749DB3B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SopraSteria-CodingGame", "SopraSteria-CodingGame.csproj", "{5314B1DF-DDB8-45F7-8658-0BE0749DB3B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
