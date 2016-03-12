@@ -5,11 +5,8 @@ using System.IO;
 
 namespace SopraSteria_CodingGame.ClientDetails
 {
-
     public class Client
     {
-
-
         private string ipServer;
         private long teamId;
         private string secret;
@@ -27,9 +24,9 @@ namespace SopraSteria_CodingGame.ClientDetails
 
         public void run()
         {
-            Console.WriteLine("Start of the client");
+            Console.WriteLine("Client started");
             IPEndPoint serverAddress = new IPEndPoint(IPAddress.Parse(ipServer), port);
-            Console.WriteLine(serverAddress.ToString());
+            Console.WriteLine("Server : " + serverAddress.ToString());
             TcpClient clientSocket = new TcpClient();
             clientSocket.Connect(serverAddress);
 
@@ -38,7 +35,7 @@ namespace SopraSteria_CodingGame.ClientDetails
             StreamWriter wr = new StreamWriter(serverStream);
             try
             {
-                Console.WriteLine("Connection to : " + gameId + "   " + teamId);
+                Console.WriteLine("Connection to game : " + gameId + " - team id : " + teamId);
                 wr.WriteLine(secret + "%%inscription::" + gameId.ToString() + ";" + teamId.ToString());
                 wr.Flush();
                 string message = null;
@@ -46,7 +43,7 @@ namespace SopraSteria_CodingGame.ClientDetails
                 {
                     message=rd.ReadLine();
                     
-                    Console.WriteLine(message);
+                    Console.WriteLine("Server raw response : " + message);
                     if (message != null)
                     {
                         if (message.Equals("Inscription OK"))
@@ -100,7 +97,7 @@ namespace SopraSteria_CodingGame.ClientDetails
 
         }
     
-        public static string computeDirection()
+        private string computeDirection()
         {
             return "E";
         }

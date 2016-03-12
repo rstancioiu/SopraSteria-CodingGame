@@ -16,28 +16,33 @@ namespace SopraSteria_CodingGame
 
     public class Program
     {
-        public static long create_game(Server server)
-        {
 
+        /*
+        General method to send requests to the server : create, start, or stop the battle
+        Parameters :
+            - server contains the proper instance of the Server object
+            - path contains the desired action, eg "/test/createBattle"
+            - game_id should be set to -1 if it's not needed in this request
+        Return value is a tuple :
+            - First argument indicates if the request succeeded
+            - Second arguments contains the response from the server, or the error
+        */
+        private static Tuple<bool, string> make_request(Server server, string path, long game_id)
+        {
             try
             {
-                Console.WriteLine("Starting the test client");
-                //Start of the game
-                
-
                 UriBuilder uri_builder = new UriBuilder();
                 uri_builder.Host = server.getHost();
                 uri_builder.Port = server.getHttpPort();
-                uri_builder.Path = "/test/createBattle";
+                uri_builder.Path = path;
                 uri_builder.Scheme = "http";
                 var query = HttpUtility.ParseQueryString(uri_builder.Query);
+                if (game_id != -1)
+                    query["gameId"] = game_id.ToString();
                 query["teamId"] = server.getRealTeamId().ToString();
                 query["secret"] = server.getSecret();
                 uri_builder.Query = query.ToString();
-                Console.WriteLine(uri_builder.ToString());
                 Uri uri = uri_builder.Uri;
-                Console.WriteLine(uri.Query);
-
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
                 request.ServicePoint.Expect100Continue = false;
@@ -46,110 +51,68 @@ namespace SopraSteria_CodingGame
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     StreamReader sr = new StreamReader(response.GetResponseStream());
-                    string s = sr.ReadToEnd();
-                    return long.Parse(s);
-                  
-                }
-
-            }
-            catch (Exception uriException)
-            {
-                Console.WriteLine(uriException.ToString());
-                Console.WriteLine("A problem has occured");
-            }
-            return 0;
-        }
-
-        public static void start_game(Server server,long game_id)
-        {
-            try
-            {
-                Console.WriteLine("We are starting the game");
-                UriBuilder uri_builder = new UriBuilder();
-                uri_builder.Scheme = "http";
-                uri_builder.Host = server.getHost();
-                uri_builder.Port = server.getHttpPort();
-                uri_builder.Path = "/test/startBattle";
-                var query = HttpUtility.ParseQueryString(uri_builder.Query);
-                query["gameId"] = game_id.ToString();
-                query["teamId"] = server.getRealTeamId().ToString();
-                query["secret"] = server.getSecret();
-                uri_builder.Query = query.ToString();
-                Console.WriteLine(uri_builder.ToString());
-                Uri uri = uri_builder.Uri;
-                Console.WriteLine(uri);
-
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-                request.ServicePoint.Expect100Continue = false;
-                request.ProtocolVersion = HttpVersion.Version11;
-
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    StreamReader sr = new StreamReader(response.GetResponseStream());
-                    Console.WriteLine(sr.ReadToEnd());
+                    return new Tuple<bool, string>(true, sr.ReadToEnd());
                 }
             }
             catch (Exception uriException)
             {
-                Console.WriteLine(uriException.ToString());
-                Console.WriteLine("A problem has occured");
+                return new Tuple<bool, string>(false, uriException.ToString());
             }
         }
 
-        public static void stop_game(Server server, long game_id)
-        {
-            try
-            {
-                Console.WriteLine("We are stopping the game");
-                UriBuilder uri_builder = new UriBuilder();
-                uri_builder.Scheme = "http";
-                uri_builder.Host = server.getHost();
-                uri_builder.Port = server.getHttpPort();
-                uri_builder.Path = "/test/stopBattle";
-                var query = HttpUtility.ParseQueryString(uri_builder.Query);
-                query["gameId"] = game_id.ToString();
-                query["teamId"] = server.getRealTeamId().ToString();
-                query["secret"] = server.getSecret();
-                uri_builder.Query = query.ToString();
-                Console.WriteLine(uri_builder.ToString());
-                Uri uri = uri_builder.Uri;
-                Console.WriteLine(uri);
-
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-                request.ServicePoint.Expect100Continue = false;
-                request.ProtocolVersion = HttpVersion.Version11;
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                
-            }
-            catch (Exception uriException)
-            {
-                Console.WriteLine(uriException.ToString());
-                Console.WriteLine("A problem has occured");
-            }
-           
-        }
-
+        /*
+        Main method of the IA
+        Here, we create, start and stop the battle if needed
+        Instances of the Client class are also created and launched here
+        */
         public static void Main(string[] args)
         {
-
+            Tuple<bool, string> request_manager;
             Server server = new Server();
+
+            //Create battle
+            request_manager = make_request(server, "/test/createBattle", -1);
             long game_id;
-            game_id =  create_game(server);
+            if(request_manager.Item1)
+            {
+                game_id = long.Parse(request_manager.Item2);
+                Console.WriteLine("Battle successfully created, game id : " + game_id);
+            }
+            else
+            {
+                Console.WriteLine("Could not create battle, error : " + request_manager.Item2);
+                return;
+            }
+
+            //Add CTRL-C handling to stop battle early if needed
             Console.CancelKeyPress += delegate
             {
-                stop_game(server, game_id);
+                make_request(server, "/test/stopBattle", game_id);
             };
-            Console.WriteLine("Game_id : "+game_id);
+
+            //Create players threads
             for (long i = server.getRealTeamId(); i < server.getMaxTeamId(); i++)
             {
                 Client client = new Client(server.getHost(), i, server.getSecret(), server.getPort(), game_id);
                 Thread thread = new Thread(new ThreadStart(client.run));
                 thread.Start();
             }
-            System.Threading.Thread.Sleep(1000);
-            start_game(server,game_id);
+
+            Console.WriteLine("Players created, waiting before starting game...");
+            System.Threading.Thread.Sleep(10000);
+
+            //Start the battle
+            request_manager = make_request(server, "/test/startBattle", game_id);
+            if (request_manager.Item1)
+            {
+                Console.WriteLine("Battle successfully started !");
+            }
+            else
+            {
+                Console.WriteLine("Could not start battle, error : " + request_manager.Item2);
+                return;
+            }
+
             Console.ReadKey();
         }
     }   
