@@ -2,24 +2,33 @@
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using SopraSteria_CodingGame.ServerDetails;
 
 namespace SopraSteria_CodingGame.ClientDetails
 {
     public class Client
     {
+        //Everything needed to communicate with the server
         private string ipServer;
         private long teamId;
         private string secret;
         private int port;
         private long gameId;
 
-	    public Client(string ipServer, long teamId, string secret, int port, long gameId)
+        //Player instance to compute moves
+        Player player;
+
+	    public Client(Server server, long gameId, long teamId)
 	    {
-            this.ipServer = ipServer;
-            this.teamId = teamId;
-            this.secret = secret;
-            this.port = port;
+            //Server communication related
+            this.ipServer = server.getHost();
+            this.secret = server.getSecret();
+            this.port = server.getPort();
             this.gameId = gameId;
+            this.teamId = teamId;
+
+            //World related
+            this.player = new Player(teamId);
 	    }
 
         public void run()
@@ -53,15 +62,14 @@ namespace SopraSteria_CodingGame.ClientDetails
                         else if (message.StartsWith("worldstate::"))
                         {
                             int start = "worldstate::".Length;
-                            int end = message.Length - start;
                             string subString = message.Substring(start);
-                            char[] separator = { ';' };
-                            string[] components = subString.Split(separator);
-                            int round = Int32.Parse(components[0]);
-                            Console.WriteLine(round);
+                            string[] components = subString.Split(';');
+                            player.updateWorld(components);
 
+                            int round = Int32.Parse(components[0]);
                             string action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-                                        + computeDirection();
+                                        + player.computeMove();
+
                             wr.WriteLine(action);
                             wr.Flush();
                         }

@@ -13,7 +13,6 @@ using SopraSteria_CodingGame.ClientDetails;
 
 namespace SopraSteria_CodingGame
 {
-
     public class Program
     {
 
@@ -76,7 +75,15 @@ namespace SopraSteria_CodingGame
             if(request_manager.Item1)
             {
                 game_id = long.Parse(request_manager.Item2);
-                Console.WriteLine("Battle successfully created, game id : " + game_id);
+                if(game_id==-1)
+                {
+                    Console.WriteLine("Could not create battle (one is already ongoing !)");
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("Battle successfully created, game id : " + game_id);
+                }
             }
             else
             {
@@ -87,13 +94,15 @@ namespace SopraSteria_CodingGame
             //Add CTRL-C handling to stop battle early if needed
             Console.CancelKeyPress += delegate
             {
+                Console.WriteLine("Battle stopped.");
                 make_request(server, "/test/stopBattle", game_id);
+                return;
             };
 
             //Create players threads
             for (long i = server.getRealTeamId(); i < server.getMaxTeamId(); i++)
             {
-                Client client = new Client(server.getHost(), i, server.getSecret(), server.getPort(), game_id);
+                Client client = new Client(server, game_id, i);
                 Thread thread = new Thread(new ThreadStart(client.run));
                 thread.Start();
             }
