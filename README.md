@@ -4,3 +4,4 @@ Given a 2D map, several AIs have to collect different logos distributed randomly
 - collecting a logo => +1 
 - placing a logo at the starting point => +30
 - an illegal move => -5
+- bumping another player => +2
