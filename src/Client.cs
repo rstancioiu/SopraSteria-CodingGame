@@ -54,7 +54,7 @@ namespace SopraSteria_CodingGame.ClientDetails
                     message=rd.ReadLine();
                     if (message != null)
                     {
-                        if (message.Equals("Inscription OK"))
+                        if (message.StartsWith("Inscription OK"))
                         {
                             Console.WriteLine("Inscription OK for team id : " + teamId);
                         }
@@ -62,18 +62,26 @@ namespace SopraSteria_CodingGame.ClientDetails
                         {
                             Console.WriteLine("/!\\ Inscription NOT OK for team id : " + teamId);
                             Console.WriteLine("Reason : " + message.Substring("Inscription KO".Length));
+                            rd.Close();
+                            wr.Close();
+                            serverStream.Close();
+                            clientSocket.Close();
                             break;
                         }
-                        else if (message.Equals("game over"))
+                        else if (message.StartsWith("game over"))
                         {
                             Console.WriteLine("/!\\ game over received for team id : " + teamId);
+                            rd.Close();
+                            wr.Close();
+                            serverStream.Close();
+                            clientSocket.Close();
                             break;
                         }
-                        else if (message.Equals("action OK"))
+                        else if (message.StartsWith("action OK"))
                         {
                             Console.WriteLine("Action OK for team id : " + teamId);
                         }
-                        else if (message.Equals("action KO"))
+                        else if (message.StartsWith("action KO"))
                         {
                             Console.WriteLine("/!\\ Action NOT OK for team id : " + teamId);
                         }
@@ -82,9 +90,10 @@ namespace SopraSteria_CodingGame.ClientDetails
                             int start = "worldstate::".Length;
                             string subString = message.Substring(start);
                             string[] components = subString.Split(';');
+                            int round = Int32.Parse(components[0]);
                             player.updateWorld(components);
 
-                            int round = Int32.Parse(components[0]);
+                            
                             string action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
                                         + player.computeMove();
 

@@ -103,7 +103,7 @@ namespace SopraSteria_CodingGame
             //Create players threads
             for (long i = server.getRealTeamId(); i < server.getMaxTeamId(); i++)
             {
-                Client client = new Client(server, game_id, i, (i == server.getRealTeamId() ? EnumIA.GREEDY : EnumIA.RANDOM));
+                Client client = new Client(server, game_id, i, EnumIA.GREEDY);
                 Thread thread = new Thread(new ThreadStart(client.run));
                 thread.Start();
             }

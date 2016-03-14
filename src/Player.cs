@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Math;
 using SopraSteria_CodingGame.IATypes;
 
 namespace SopraSteria_CodingGame
@@ -75,6 +74,8 @@ namespace SopraSteria_CodingGame
 
         private const int MAX_X = 15;
         private const int MAX_Y = 12;
+        private const int MAX_AVAILABLE_JUMPS = 3;
+
         private Position[] deltaPos =
         {
             new Position(-1, 0),
@@ -167,7 +168,7 @@ namespace SopraSteria_CodingGame
         //Manhattan distance
         public int distance(Position p1, Position p2)
         {
-            return (Abs(p1.x - p2.x) + Abs(p1.y - p2.y));
+            return (System.Math.Abs(p1.x - p2.x) + System.Math.Abs(p1.y - p2.y));
         }
 
         //Main IA method, to compute the next move for our rabbit
@@ -194,40 +195,68 @@ namespace SopraSteria_CodingGame
         ---------------------------------------------------------------*/
         public List<Position> BFS(Position source, Position target)
         {
-            Queue<List<Position>> q = new Queue<List<Position>>();
+            Queue<Position> q = new Queue<Position>();
             List<Position> l = new List<Position>();
             //Default is false for boolean type so no worry
             bool[,] visited = new bool[16, 13];
-            l.Add(source);
-            q.Enqueue(l);
-            while (q.Count > 0)
+
+            // 2D-Array that helps find the previous searched position of the current position
+            Position[,] prevPos = new Position[16, 13];
+
+            q.Enqueue(source);
+            bool targetFound = false;
+            while (q.Count > 0 && !targetFound)
             {
-                List<Position> path = q.Dequeue();
-                Position lastPos = path.Last();
+                Position lastPos = q.Dequeue();
 
                 //For each adjacent position
                 foreach(Position delta in deltaPos)
                 {
                     Position newPos = lastPos + delta;
-                    List<Position> newPath = new List<Position>(path);
-                    newPath.Add(newPos);
-
-                    //If we reached the target, return the current path
-                    if (newPos == target)
-                        return newPath;
 
                     //If there is no rabbit here and it's not outside the map and it's not visited, add it to queue
                     List<Rabbit> rHere = rabbits.Where(k => k.Value.pos == newPos).Select(k => k.Value).ToList();
-                    if(rHere.Count==0 && newPos.x>=0 && newPos.x<=MAX_X && newPos.y >= 0 && newPos.y <= MAX_Y && !visited[newPos.x, newPos.y])
+                    if(rHere.Count == 0 && check(newPos) && !visited[newPos.x, newPos.y])
                     {
+                        // the previous position of the new postion is the current position
+                        prevPos[newPos.x, newPos.y] = lastPos;
+                        visited[newPos.x, newPos.y] = true;                    
+
+                        //If we reached the target, return the current path
+                        if (newPos == target)
+                        {
+                            targetFound = true;
+                            break;
+                        }
+                        q.Enqueue(newPos);
+                    }
+                    else if(target==newPos)
+                    {
+                        prevPos[newPos.x, newPos.y] = lastPos;
                         visited[newPos.x, newPos.y] = true;
-                        q.Enqueue(newPath);
+                        targetFound = true;
+                        break;
                     }
                 }
             }
             //Return an empty list if there is no solution
             //This might be possible if rabbits block the way
-            return new List<Position>();
+            if(!targetFound) return new List<Position>();
+            
+            // Compute the inverse path
+            while (q.Count > 0) q.Dequeue();
+            List<Position> ret = new List<Position>();
+            Position aux = target;
+            do
+            {
+                ret.Add(aux);
+                aux = prevPos[aux.x, aux.y];
+            } while (aux != source);
+            ret.Add(source);
+            // Reversing the path
+            ret.Reverse();
+
+            return ret;
         }
 
         /* ---------------------------------------------------------------
@@ -243,6 +272,15 @@ namespace SopraSteria_CodingGame
         /* ---------------------------------------------------------------
                 GREEDY IA
         ---------------------------------------------------------------*/
+        int availableJumps = 0;
+
+        public bool check(Position p)
+        {
+            if (p.x >= 0 && p.x <= MAX_X && p.y >= 0 && p.y <= MAX_Y)
+                return true;
+            return false;
+        }
+      
         public string computeGreedy()
         {
             Rabbit rabbitPlayer = rabbits[playerId];
@@ -264,11 +302,62 @@ namespace SopraSteria_CodingGame
                 {
                     nextStep = pathToBasket[1];
                 }
+
+                // Do special moves when the rabbit is near another rabbit or use of super jump
+                foreach(KeyValuePair<long,Rabbit> rabbit in rabbits)
+                {
+                    if (rabbit.Key != playerId )
+                    {
+                        int rabbitId = (int)rabbit.Key;
+                        
+                        // The rabbit is 2 case away form a rabbit with a logo -> stun him
+                        if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 2 && 
+                            rabbit.Key != lastOpponent && rabbit.Value.pos!=posBaskets[rabbit.Key])
+                        {
+                            List<Position> chosenPath = BFS(rabbitPlayer.pos, rabbit.Value.pos);
+                            nextStep = chosenPath[1];
+                            break;
+                        }
+
+                        // The rabbit is one case away from a stunned rabbit and has a logo -> double jump
+                        else if (rabbit.Value.isStunned && distance(rabbitPlayer.pos, rabbit.Value.pos) == 1 && availableJumps<MAX_AVAILABLE_JUMPS)
+                        {
+                            Position newStep = new Position();
+                            newStep.x = (nextStep.x == rabbitPlayer.pos.x) ? nextStep.x : rabbitPlayer.pos.x - (rabbitPlayer.pos.x - nextStep.x) * 2;
+                            newStep.y = (nextStep.y == rabbitPlayer.pos.y) ? nextStep.y : rabbitPlayer.pos.y - (rabbitPlayer.pos.y - nextStep.y) * 2;
+                            if (check(newStep))
+                            {
+                                nextStep = newStep;
+                                availableJumps++;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             //Otherwise, we need to get a logo somewhere
             else
             {
+                // Do special moves when the rabbit is near another rabbit or use of super jump
+                foreach (KeyValuePair<long, Rabbit> rabbit in rabbits)
+                {
+                    if (rabbit.Key != playerId)
+                    {
+                        int rabbitId = (int)rabbit.Key;
+
+                        // The rabbit is 2 case away form a rabbit with a logo -> stun him 
+                        // Though he is safe when he is home
+                        if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 2 &&
+                            rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key])
+                        {
+                            List<Position> chosenPath = BFS(rabbitPlayer.pos, rabbit.Value.pos);
+                            nextStep = chosenPath[1];
+                            break;
+                        }
+                    }
+                }
+
                 //If there are free logos remaining
                 if (posLogos.Count > 0)
                 {
@@ -312,16 +401,20 @@ namespace SopraSteria_CodingGame
                     if (DEBUG)
                         Console.WriteLine("--- Greedy IA : Trying to steal rabbits, candidates : " + rabbitsWithLogos.Count);
 
-                    //Try to go to the closest one, or next ones if impossible
-                    foreach (Position rtarget in rabbitsWithLogos)
+                    if(rabbitsWithLogos.Count>0)
                     {
-                        List<Position> pathToRabbit = BFS(rabbitPlayer.pos, rtarget);
-                        if (pathToRabbit.Count > 0)
+                        int minimum = 0x7fffffff; 
+                        //Try to go to the closest one, or next ones if impossible
+                        foreach (Position rtarget in rabbitsWithLogos)
                         {
-                            nextStep = pathToRabbit[1];
-                            if (DEBUG)
-                                Console.WriteLine("--- Greedy IA : Moving towards rabbit " + rtarget + " by pos " + nextStep);
-                            break;
+                            List<Position> pathToRabbit = BFS(rabbitPlayer.pos, rtarget);
+                            if (pathToRabbit.Count > minimum)
+                            {
+                                minimum = pathToRabbit.Count;
+                                nextStep = pathToRabbit[1];
+                                if (DEBUG)
+                                    Console.WriteLine("--- Greedy IA : Moving towards rabbit " + rtarget + " by pos " + nextStep);
+                            }
                         }
                     }
                 }
@@ -357,9 +450,16 @@ namespace SopraSteria_CodingGame
                     return "S";
                 if (nextStep.y - rabbitPlayer.pos.y == -1)
                     return "N";
+                if (nextStep.x - rabbitPlayer.pos.x == 2)
+                    return "JE";
+                if (nextStep.x - rabbitPlayer.pos.x == -2)
+                    return "JO";
+                if (nextStep.y - rabbitPlayer.pos.y == 2)
+                    return "JS";
+                if (nextStep.y - rabbitPlayer.pos.y == -2)
+                    return "JN";
                 //Duh, mistake
-                else
-                    return "";
+                return "";
             }
             //No good action was found
             else
