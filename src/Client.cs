@@ -93,12 +93,17 @@ namespace SopraSteria_CodingGame.ClientDetails
                             int round = Int32.Parse(components[0]);
                             player.updateWorld(components);
 
-                            
-                            string action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
-                                        + player.computeMove();
 
-                            wr.WriteLine(action);
-                            wr.Flush();
+                            string move = player.computeMove();
+
+                            if (move != "")
+                            {
+                                string action = secret + "%%action::" + teamId + ";" + gameId + ";" + round + ";"
+                                        + move;
+
+                                wr.WriteLine(action);
+                                wr.Flush();
+                            }
                         }
                     }
                 } while (message != null);
