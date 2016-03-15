@@ -273,6 +273,7 @@ namespace SopraSteria_CodingGame
                 GREEDY IA
         ---------------------------------------------------------------*/
         int availableJumps = 0;
+        Dictionary<long, Rabbit> rabbitWhoStunned = new Dictionary<long, Rabbit>();
 
         public bool check(Position p)
         {
@@ -289,7 +290,15 @@ namespace SopraSteria_CodingGame
 
             //If we are stunned, nothing to be done
             if (rabbitPlayer.isStunned)
+            {
+                foreach (KeyValuePair<long, Rabbit> rabbit in rabbits)
+                {
+                    if((distance(rabbitPlayer.pos, rabbit.Value.pos) ==1))
+                        rabbitWhoStunned.Add(rabbit.Key,rabbit.Value);
+
+                }
                 return "";
+            }
 
             //If we carry a logo, we need to go to the basket
             if (rabbitPlayer.hasLogo)
@@ -312,10 +321,11 @@ namespace SopraSteria_CodingGame
                         
                         // The rabbit is 2 case away form a rabbit with a logo -> stun him
                         if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 2 && 
-                            rabbit.Key != lastOpponent && rabbit.Value.pos!=posBaskets[rabbit.Key])
+                            rabbit.Key != lastOpponent && rabbit.Value.pos!=posBaskets[rabbit.Key] && rabbitWhoStunned.ContainsKey(rabbit.Key))
                         {
                             List<Position> chosenPath = BFS(rabbitPlayer.pos, rabbit.Value.pos);
                             nextStep = chosenPath[1];
+                            rabbitWhoStunned.Clear();
                             break;
                         }
 
@@ -349,11 +359,25 @@ namespace SopraSteria_CodingGame
                         // The rabbit is 2 case away form a rabbit with a logo -> stun him 
                         // Though he is safe when he is home
                         if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 2 &&
-                            rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key])
+                            rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key] &&  rabbitWhoStunned.ContainsKey(rabbit.Key))
                         {
                             List<Position> chosenPath = BFS(rabbitPlayer.pos, rabbit.Value.pos);
                             nextStep = chosenPath[1];
+                            rabbitWhoStunned.Clear();
                             break;
+                        }
+                        // The rabbit is one case away from a stunned rabbit and has a logo -> double jump
+                        else if (rabbit.Value.isStunned && distance(rabbitPlayer.pos, rabbit.Value.pos) == 1 && availableJumps < MAX_AVAILABLE_JUMPS)
+                        {
+                            Position newStep = new Position();
+                            newStep.x = (nextStep.x == rabbitPlayer.pos.x) ? nextStep.x : rabbitPlayer.pos.x - (rabbitPlayer.pos.x - nextStep.x) * 2;
+                            newStep.y = (nextStep.y == rabbitPlayer.pos.y) ? nextStep.y : rabbitPlayer.pos.y - (rabbitPlayer.pos.y - nextStep.y) * 2;
+                            if (check(newStep))
+                            {
+                                nextStep = newStep;
+                                availableJumps++;
+                                break;
+                            }
                         }
                     }
                 }
@@ -393,9 +417,11 @@ namespace SopraSteria_CodingGame
                     // - The rabbit structure verifies the boolean hasLogo
                     // - The rabbit identifier isn't our last opponent
                     // - The rabbit is at least one block away
+                    // - The rabbit is not the one who stunned us previously
                     List<Position> rabbitsWithLogos = rabbits.Where(r => (r.Value.hasLogo
                                                                     && r.Key != lastOpponent
-                                                                    && distance(r.Value.pos, rabbitPlayer.pos) >= 1))
+                                                                    && distance(r.Value.pos, rabbitPlayer.pos) >= 1
+                                                                    && rabbitWhoStunned.ContainsKey(r.Key)))
                                                                     .Select(r => r.Value.pos).ToList();
 
                     if (DEBUG)
@@ -414,6 +440,17 @@ namespace SopraSteria_CodingGame
                                 nextStep = pathToRabbit[1];
                                 if (DEBUG)
                                     Console.WriteLine("--- Greedy IA : Moving towards rabbit " + rtarget + " by pos " + nextStep);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach(Position delta in deltaPos)
+                        {
+                            if(check(delta+rabbitPlayer.pos))
+                            {
+                                nextStep = delta + rabbitPlayer.pos;
+                                break;
                             }
                         }
                     }
