@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SopraSteria_CodingGame.IATypes;
 
-namespace SopraSteria_CodingGame
+namespace SopraSteria_CodingGame.PlayerDetails
 {
     //Inner class to describe a position
     public struct Position

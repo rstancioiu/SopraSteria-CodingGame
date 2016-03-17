@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.IO;
 using SopraSteria_CodingGame.ServerDetails;
 using SopraSteria_CodingGame.IATypes;
+using SopraSteria_CodingGame.PlayerDetails;
 
 namespace SopraSteria_CodingGame.ClientDetails
 {

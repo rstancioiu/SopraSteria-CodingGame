@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\Game.cs" />
     <Compile Include="src\Client.cs" />
     <Compile Include="src\EnumIA.cs" />
     <Compile Include="src\Player.cs" />
