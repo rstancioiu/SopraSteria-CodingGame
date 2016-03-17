@@ -67,6 +67,7 @@ namespace SopraSteria_CodingGame
         public long playerId;
         private EnumIA typeIA;
         private long lastOpponent;
+        private int round;
 
         private Dictionary<long, Position> posBaskets = new Dictionary<long, Position>();
         private Dictionary<long, Rabbit> rabbits = new Dictionary<long, Rabbit>();
@@ -76,13 +77,7 @@ namespace SopraSteria_CodingGame
         private const int MAX_Y = 12;
         private const int MAX_AVAILABLE_JUMPS = 3;
 
-        private Position[] deltaPos =
-        {
-            new Position(-1, 0),
-            new Position(1, 0),
-            new Position(0, 1),
-            new Position(0, -1)
-        };
+        private List<Position> deltaPos = new List<Position>();
         Position NONE = new Position(-1, -1);
 
         //Guid : great seed for random in c#
@@ -97,6 +92,10 @@ namespace SopraSteria_CodingGame
         {
             this.playerId = playerId;
             this.typeIA = typeIA;
+            deltaPos.Add(new Position(-1, 0));
+            deltaPos.Add(new Position(1, 0) );
+            deltaPos.Add(new Position(0, 1) );
+            deltaPos.Add(new Position(0, -1));
         }
 
         //Updates the player's vision of the world given server information
@@ -146,7 +145,7 @@ namespace SopraSteria_CodingGame
             }
 
             //And finally, set the baskets if this is first round
-            int round = Int32.Parse(message[0]);
+            round = Int32.Parse(message[0]);
             if(round==1)
             {
                 string basketInformation = message[3];
@@ -223,6 +222,7 @@ namespace SopraSteria_CodingGame
             while(q.Count>0)
             {
                 Position currentPosition = q.Dequeue();
+                deltaPos.OrderBy(item => random_manager.Next());
                 foreach(Position delta in deltaPos)
                 {
                     Position newPosition = currentPosition + delta;
