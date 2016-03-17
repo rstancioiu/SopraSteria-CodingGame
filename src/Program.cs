@@ -60,6 +60,17 @@ namespace SopraSteria_CodingGame
             }
         }
 
+        public class PlayerStats
+        {
+            public int wins;
+            public int totalScore;
+            public PlayerStats()
+            {
+                this.wins = 0;
+                this.totalScore = 0;
+            }
+        }
+
         /*
         Main method of the IA
         Here, we create, start and stop the battle if needed
@@ -67,6 +78,41 @@ namespace SopraSteria_CodingGame
         */
         public static void Main(string[] args)
         {
+            /* ----------------------------------------------------------------
+                                   OFFLINE BENCHMARKING
+            ----------------------------------------------------------------*/
+            int NB_GAMES = 500;
+            PlayerStats[] stats = new PlayerStats[6];
+
+            for(int i=0; i<NB_GAMES; i++)
+            {
+                Game g = new Game();
+                g.run();
+                List<int> scores = g.result();
+                int maxi = scores.Aggregate((s, s2) => s > s2 ? s : s2);
+                for(int j=0; j < scores.Count; j++)
+                {
+                    ((PlayerStats)stats[j]).totalScore += scores[j];
+                    if(scores[j] == maxi)
+                    {
+                        ((PlayerStats)stats[j]).wins++;
+                    }
+                }
+            }
+            Console.WriteLine("--------- BENCHMARK RESULTS ---------");
+            Console.WriteLine("NB GAMES : " + NB_GAMES);
+            int step = 0;
+            foreach (PlayerStats p in stats)
+            {
+                Console.WriteLine("--- Player " + step);
+                Console.WriteLine("     Wins : " + p.wins + " / " + NB_GAMES);
+                Console.WriteLine("     AVG Score : " + p.totalScore/NB_GAMES);
+            }
+
+            return;
+            /* ----------------------------------------------------------------
+                                        ONLINE BATTLES
+            ----------------------------------------------------------------*/
             Tuple<bool, string> request_manager;
             Server server = new Server();
 
