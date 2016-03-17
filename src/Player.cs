@@ -222,7 +222,12 @@ namespace SopraSteria_CodingGame
             while(q.Count>0)
             {
                 Position currentPosition = q.Dequeue();
-                deltaPos.OrderBy(item => random_manager.Next());
+                deltaPos = deltaPos.OrderBy(item => random_manager.Next()).ToList();
+                Console.WriteLine("-- delta pos --");
+                foreach (Position dp in deltaPos)
+                {
+                    Console.WriteLine("Delta pos : " + dp);
+                }
                 foreach(Position delta in deltaPos)
                 {
                     Position newPosition = currentPosition + delta;
