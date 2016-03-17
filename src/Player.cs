@@ -189,7 +189,7 @@ namespace SopraSteria_CodingGame
         }
 
         /* ---------------------------------------------------------------
-                BFS : updates the list of table previous so that when we call
+                BFS : updates the list of table parent so that when we call
                 the function getReversePath to have the path from source to the
                 target position in O(V). (faster algorithm implementation)
         ----------------------------------------------------------------*/
@@ -200,8 +200,8 @@ namespace SopraSteria_CodingGame
         public void BFS(Position source)
         {
             Rabbit rabbitPlayer = rabbits[playerId];
-            vis.Initialize();
-            List<Rabbit> enemyRabbits = rabbits.Where(k => k.Value.pos == rabbitPlayer.pos).Select(k => k.Value).ToList();
+            List<Rabbit> enemyRabbits = rabbits.Where(k => k.Value.pos != rabbitPlayer.pos).Select(k => k.Value).ToList();
+
             for (int i = 0; i <= MAX_X; ++i)
             {
                 for (int j = 0; j <= MAX_Y; ++j)
@@ -210,10 +210,12 @@ namespace SopraSteria_CodingGame
                     dist[i, j] = 0x3f3f3f3f;
                 }
             }
+
             foreach(Rabbit enemy in enemyRabbits)
             {
                 vis[enemy.pos.x, enemy.pos.y] = -1;
             }
+
             Queue<Position> q = new Queue<Position>();
             q.Enqueue(source);
             dist[source.x, source.y] = 0;
@@ -280,7 +282,7 @@ namespace SopraSteria_CodingGame
                 GREEDY IA
         ---------------------------------------------------------------*/
         int availableJumps = 0;
-        Dictionary<long, Rabbit> rabbitWhoStunned = new Dictionary<long, Rabbit>();
+        Dictionary<long, Rabbit> lastRabbitStunned = new Dictionary<long, Rabbit>();
 
         public bool check(Position p)
         {
@@ -310,7 +312,7 @@ namespace SopraSteria_CodingGame
                     Console.WriteLine("--- Greedy IA : Go to basket");
                 Position myBasket = posBaskets[playerId];
                 List<Position> pathToBasket = getReversePath(rabbitPlayer.pos, myBasket);
-                if (pathToBasket.Count > 0)
+                if (pathToBasket.Count > 0 && vis[pathToBasket[1].x,pathToBasket[1].y]!=-1)
                 {
                     nextStep = pathToBasket[1];
                 }
@@ -337,7 +339,7 @@ namespace SopraSteria_CodingGame
                     foreach (Position logo in logos)
                     {
                         List<Position> pathToLogo = getReversePath(rabbitPlayer.pos, logo);
-                        if (pathToLogo.Count > 0)
+                        if (pathToLogo.Count > 0 && vis[pathToLogo[1].x, pathToLogo[1].y]!=-1)
                         {
                             nextStep = pathToLogo[1];
                             if (DEBUG)
@@ -357,14 +359,14 @@ namespace SopraSteria_CodingGame
                     // The rabbit is 2 case away form a rabbit with a logo -> stun him 
                     // Though he is safe when he is home
                     if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 2 &&
-                        rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key] && !rabbitWhoStunned.ContainsKey(rabbit.Key))
+                        rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key] && !lastRabbitStunned.ContainsKey(rabbit.Key))
                     {
                         List<Position> chosenPath = getReversePath(rabbitPlayer.pos, rabbit.Value.pos);
-                        if (vis[chosenPath[1].x, chosenPath[1].y] != -1)
+                        Position futureStep = chosenPath[1];
+                        if (vis[ futureStep.x, futureStep.y] != -1  && 
+                            (!rabbitPlayer.hasLogo || ( rabbitPlayer.hasLogo && distance(rabbitPlayer.pos, posBaskets[playerId]) >= distance(futureStep, posBaskets[playerId]))))
                         {
-                            nextStep = chosenPath[1];
-                            rabbitWhoStunned.Clear();
-                            rabbitWhoStunned.Add(rabbit.Key, rabbit.Value);
+                            nextStep = futureStep;
                             break;
                         }
                     }
@@ -372,22 +374,24 @@ namespace SopraSteria_CodingGame
                     // The rabbit is 3 case away form a rabbit with a logo -> jump to stun him 
                     // Though he is safe when he is home
                     if (rabbit.Value.hasLogo && distance(rabbitPlayer.pos, rabbit.Value.pos) == 3 &&
-                        rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key] && !rabbitWhoStunned.ContainsKey(rabbit.Key)
-                        && availableJumps<MAX_AVAILABLE_JUMPS)
+                        rabbit.Key != lastOpponent && rabbit.Value.pos != posBaskets[rabbit.Key] && !lastRabbitStunned.ContainsKey(rabbit.Key)
+                        && availableJumps<MAX_AVAILABLE_JUMPS )
                     {
-                        List<Position> chosenPath = getReversePath(rabbitPlayer.pos, rabbit.Value.pos);
-                        if (vis[chosenPath[2].x, chosenPath[2].y] != -1)
+                        foreach(Position delta in deltaPos)
                         {
-                            availableJumps++;
-                            nextStep = chosenPath[2];
-                            rabbitWhoStunned.Clear();
-                            rabbitWhoStunned.Add(rabbit.Key, rabbit.Value);
-                            break;
+                            Position futureStep = delta + delta + rabbitPlayer.pos;
+                            if(distance(futureStep,rabbit.Value.pos)==1 && vis[futureStep.x, futureStep.y]!=-1
+                                && (!rabbitPlayer.hasLogo || ( rabbitPlayer.hasLogo && distance(rabbitPlayer.pos, posBaskets[playerId]) >= distance(futureStep, posBaskets[playerId]))))
+                            {
+                                availableJumps++;
+                                nextStep = futureStep;
+                                break;
+                            }
                         }
                     }
 
                     // The rabbit is one case away from a stunned rabbit and has a logo -> double jump
-                    if (rabbit.Value.isStunned && distance(rabbitPlayer.pos, rabbit.Value.pos) == 1 && availableJumps < MAX_AVAILABLE_JUMPS)
+                    if (rabbitPlayer.hasLogo && rabbit.Value.isStunned && distance(rabbitPlayer.pos, posBaskets[playerId])!=1 && distance(rabbitPlayer.pos, rabbit.Value.pos) == 1 && availableJumps < MAX_AVAILABLE_JUMPS)
                     {
                         Position newStep = new Position();
                         newStep.x = (nextStep.x == rabbitPlayer.pos.x) ? nextStep.x : rabbitPlayer.pos.x - (rabbitPlayer.pos.x - nextStep.x) * 2;
@@ -412,7 +416,7 @@ namespace SopraSteria_CodingGame
                     List<Position> rabbitsWithLogos = rabbits.Where(r => (r.Value.hasLogo
                                                                     && r.Key != lastOpponent
                                                                     && distance(r.Value.pos, rabbitPlayer.pos) >= 1
-                                                                    && !rabbitWhoStunned.ContainsKey(r.Key)))
+                                                                    && !lastRabbitStunned.ContainsKey(r.Key)))
                                                                     .Select(r => r.Value.pos).ToList();
 
                     if (DEBUG)
@@ -425,7 +429,7 @@ namespace SopraSteria_CodingGame
                         foreach (Position rtarget in rabbitsWithLogos)
                         {
                             List<Position> pathToRabbit = getReversePath(rabbitPlayer.pos, rtarget);
-                            if (pathToRabbit.Count > minimum)
+                            if (pathToRabbit.Count > minimum && vis[pathToRabbit[1].x, pathToRabbit[1].y]!=-1)
                             {
                                 minimum = pathToRabbit.Count;
                                 nextStep = pathToRabbit[1];
@@ -438,7 +442,8 @@ namespace SopraSteria_CodingGame
                     {
                         foreach(Position delta in deltaPos)
                         {
-                            if(check(delta+rabbitPlayer.pos))
+                            Position futureStep = delta + rabbitPlayer.pos;
+                            if(check(futureStep) && vis[futureStep.x,futureStep.y]!=-1)
                             {
                                 nextStep = delta + rabbitPlayer.pos;
                                 break;
@@ -458,15 +463,15 @@ namespace SopraSteria_CodingGame
                 {
                     if (DEBUG)
                         Console.WriteLine("--- Greedy IA : Geez ! We just hit rabbit @pos " + rNext.First().Value.pos);
-                    long r2 = rNext.First().Key;
-                    lastOpponent = r2;
+                    lastRabbitStunned.Clear();
+                    lastRabbitStunned.Add(rNext[0].Key, rNext[0].Value);
                 }
                 //Combo
                 else if (rNext.Count > 1)
                 {
+                    lastRabbitStunned.Clear();
                     if (DEBUG)
                         Console.WriteLine("--- Greedy IA : Geez ! We just hit many rabbits");
-                    lastOpponent = -1;
                 }
 
                 //Return the correct action
@@ -487,6 +492,7 @@ namespace SopraSteria_CodingGame
                 if (nextStep.y - rabbitPlayer.pos.y == -2)
                     return "JN";
                 //Duh, mistake
+                Console.WriteLine("We failed pretty badly ----------------------------------- oh doh");
                 return "";
             }
             //No good action was found
