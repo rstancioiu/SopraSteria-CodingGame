@@ -502,5 +502,10 @@ namespace SopraSteria_CodingGame.PlayerDetails
                 return "";
             }
         }
+
+        public Position getPlayerPosition()
+        {
+            return rabbits[playerId].pos;
+        }
     }
 }
